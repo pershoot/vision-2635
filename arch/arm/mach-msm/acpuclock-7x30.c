@@ -72,6 +72,7 @@ struct clock_state {
 	struct mutex			lock;
 	uint32_t			acpu_switch_time_us;
 	uint32_t			vdd_switch_time_us;
+	unsigned long                   power_collapse_khz;
 	unsigned long			wait_for_irq_khz;
 	int				wfi_ramp_down;
 	int				pwrc_ramp_down;
@@ -219,13 +220,13 @@ static struct clkctl_acpu_speed acpu_freq_tbl[] = {
 };
 static unsigned long max_axi_rate;
 
-#define POWER_COLLAPSE_HZ (MAX_AXI_KHZ * 1000)
 unsigned long acpuclk_power_collapse(int from_idle)
 {
-	int ret = acpuclk_get_rate();
-	if (drv_state.pwrc_ramp_down)
-		acpuclk_set_rate(POWER_COLLAPSE_HZ, SETRATE_PC);
-	return ret * 1000;
+        int ret = acpuclk_get_rate();
+        if (ret > drv_state.power_collapse_khz)
+                acpuclk_set_rate(drv_state.power_collapse_khz * 1000,
+        (from_idle ? SETRATE_PC_IDLE : SETRATE_PC));
+        return ret * 1000;
 }
 
 unsigned long acpuclk_get_wfi_rate(void)
@@ -233,13 +234,12 @@ unsigned long acpuclk_get_wfi_rate(void)
 	return drv_state.wait_for_irq_khz * 1000;
 }
 
-#define WAIT_FOR_IRQ_HZ (MAX_AXI_KHZ * 1000)
 unsigned long acpuclk_wait_for_irq(void)
 {
-	int ret = acpuclk_get_rate();
-	if (drv_state.wfi_ramp_down)
-		acpuclk_set_rate(WAIT_FOR_IRQ_HZ, SETRATE_SWFI);
-	return ret * 1000;
+        int ret = acpuclk_get_rate();
+        if (ret > drv_state.wait_for_irq_khz)
+                acpuclk_set_rate(drv_state.wait_for_irq_khz * 1000, SETRATE_SWFI);
+        return ret * 1000;
 }
 
 #ifdef CONFIG_HTC_SMEM_MSMC1C2_DEBUG
@@ -677,6 +677,7 @@ void __init msm_acpu_clock_init(struct msm_acpu_clock_platform_data *clkdata)
 	mutex_init(&drv_state.lock);
 	drv_state.acpu_switch_time_us = clkdata->acpu_switch_time_us;
 	drv_state.vdd_switch_time_us = clkdata->vdd_switch_time_us;
+	drv_state.power_collapse_khz = clkdata->power_collapse_khz;
 	drv_state.wfi_ramp_down = 1;
 	drv_state.pwrc_ramp_down = 1;
 #ifndef CONFIG_ACPUCLOCK_LIMIT_768MHZ
