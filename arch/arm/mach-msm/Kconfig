@@ -1688,11 +1688,6 @@ config ACPUCLOCK_OVERCLOCKING
 	depends on CPU_FREQ && !PERFLOCK
 	depends on ARCH_MSM7X30
 
-config JESUS_PHONE
-        bool "Enable support for unstable CPU frequencies"
-        default n
-        depends on ACPUCLOCK_OVERCLOCKING
-
 config HTC_SMEM_MSMC1C2_DEBUG
 	bool "MSMC1/MSMC2 shared memory debug"
 	default n
