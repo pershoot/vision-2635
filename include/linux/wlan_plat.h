@@ -22,8 +22,7 @@ struct wifi_platform_data {
 	int (*set_carddetect)(int val);
 	void *(*mem_prealloc)(int section, unsigned long size);
 	int (*get_mac_addr)(unsigned char *buf);
-	int dot11n_enable;
-	int cscan_enable;
+	void *(*get_country_code)(char *ccode);
 };
 
 #endif
