@@ -83,7 +83,7 @@ struct clkctl_acpu_speed {
 	int		src;
 	unsigned int	acpu_src_sel;
 	unsigned int	acpu_src_div;
-	unsigned int	axi_clk_hz;
+	unsigned int    axi_clk_khz;
 	unsigned int	vdd_mv;
 	unsigned int	vdd_raw;
 	unsigned long	lpj; /* loops_per_jiffy */
@@ -362,8 +362,8 @@ int acpuclk_set_rate(unsigned long rate, enum setrate_reason reason)
 	/* Increase the AXI bus frequency if needed. This must be done before
 	 * increasing the ACPU frequency, since voting for high AXI rates
 	 * implicitly takes care of increasing the MSMC1 voltage, as needed. */
-	if (tgt_s->axi_clk_hz > strt_s->axi_clk_hz) {
-		res = clk_set_rate(ebi1_clk, tgt_s->axi_clk_hz);
+	if (tgt_s->axi_clk_khz > strt_s->axi_clk_khz) {
+		res = clk_set_rate(ebi1_clk, tgt_s->axi_clk_khz * 1000);
 		if (rc < 0) {
 			pr_err("Setting AXI min rate failed (%d)\n", rc);
 			goto out;
@@ -392,8 +392,8 @@ int acpuclk_set_rate(unsigned long rate, enum setrate_reason reason)
 	}
 
 	/* Decrease the AXI bus frequency if we can. */
-	if (tgt_s->axi_clk_hz < strt_s->axi_clk_hz) {
-		res = clk_set_rate(ebi1_clk, tgt_s->axi_clk_hz);
+	if (tgt_s->axi_clk_khz < strt_s->axi_clk_khz) {
+		res = clk_set_rate(ebi1_clk, tgt_s->axi_clk_khz * 1000);
 		if (res < 0)
 			pr_warning("Setting AXI min rate failed (%d)\n", res);
 	}
@@ -584,14 +584,14 @@ static void __init acpuclk_init(void)
 	ebi1_clk = clk_get(NULL, "ebi1_clk");
 	BUG_ON(ebi1_clk == NULL);
 
-	res = clk_set_rate(ebi1_clk, s->axi_clk_hz);
+	res = clk_set_rate(ebi1_clk, s->axi_clk_khz * 1000);
 	if (res < 0)
 		pr_warning("Setting AXI min rate failed!\n");
 
 	pr_info("ACPU running at %d KHz\n", s->acpu_clk_khz);
 
 	s = acpu_freq_tbl + ARRAY_SIZE(acpu_freq_tbl) - 2;
-	max_axi_rate = s->axi_clk_hz;
+	max_axi_rate = s->axi_clk_khz * 1000;
 	return;
 }
 
@@ -664,7 +664,7 @@ void __init pll2_fixup(void)
 		BUG();
 	}
 #ifdef CONFIG_MSM7X30_DDR2
-	speed->axi_clk_hz = UINT_MAX;
+	speed->axi_clk_khz = UINT_MAX;
 #endif
 }
 
